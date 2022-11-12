@@ -1,0 +1,42 @@
+- hosts: dokku
+  roles:
+    - dokku_bot.ansible_dokku
+  vars:
+    dokku_hostname: "{{ ansible_host }}"
+    dokku_plugins:
+      - name: clone
+        url: https://github.com/crisward/dokku-clone.git
+      - name: postgres
+        url: https://github.com/dokku/dokku-postgres.git
+      - name: letsencrypt
+        url: https://github.com/dokku/dokku-letsencrypt.git
+  tasks:
+    - name: postgres:create kotkowo
+      dokku_service_create:
+        name: &kotkowo_db kotkowo
+        service: postgres
+    - name: Create kotkowo app
+      dokku_app:
+        app: &kotkowo_app kotkowo
+    - name: postgres:link *kotkowo_db *kotkowo_app
+      dokku_service_link:
+        app: *kotkowo_app
+        name: *kotkowo_db
+        service: postgres
+    - name: Setup Phoenix SECRET_KEY_BASE
+      dokku_config:
+        app: *kotkowo_app
+        config:
+          SECRET_KEY_BASE: "{{ secret_key_base }}"
+    - name: Setup Let's encrypt email *kotkowo_app
+      dokku_config:
+        app: *kotkowo_app
+        config:
+          DOKKU_LETSENCRYPT_EMAIL: "maksymilian.jodlowski@gmail.com"
+    - name: dokku clone *kotkowo_app
+      dokku_clone:
+        app: *kotkowo_app
+        repository: https://github.com/kotkowo/kotkowo
+    - name: Enable the letsencrypt plugin for *kotkowo_app
+      dokku_letsencrypt:
+        app: *kotkowo_app

@@ -1,0 +1,3 @@
+roles:
+- name: dokku_bot.ansible_dokku
+  version: v2022.10.17
